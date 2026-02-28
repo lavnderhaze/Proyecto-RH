@@ -1,0 +1,18 @@
+# ========================
+# Backend
+# ========================
+bin/
+obj/
+.vs/
+*.user
+*.suo
+appsettings.Development.json
+
+# ========================
+# Frontend
+# ========================
+node_modules/
+.next/
+dist/
+.env
+.env.local
