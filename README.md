@@ -7,4 +7,5 @@ Aplicación para la visualización de colaboradores en una empresa y generación
 
 ### .NET
 npm install lucide-react
+npm install exceljs file-saver
 npm run dev
