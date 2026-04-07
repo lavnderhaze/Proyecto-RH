@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rhapi-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rhapi
+  template:
+    metadata:
+      labels:
+        app: rhapi
+    spec:
+      containers:
+      - name: rhapi
+        image: rhapi
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
