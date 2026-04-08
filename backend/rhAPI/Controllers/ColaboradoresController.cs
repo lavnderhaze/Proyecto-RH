@@ -24,5 +24,31 @@ namespace rhAPI.Controllers
         {
             return await _context.Colaboradores.ToListAsync();
         }
+
+        // DELETE: api/colaboradores/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var colaborador = await _context.Colaboradores.FindAsync(id);
+
+            if (colaborador == null)
+            {
+                return NotFound(new { message = $"Colaborador con Id {id} no encontrado" });
+            }
+
+            // Verificar si tiene formatos generados asociados
+            var tieneFormatos = await _context.FormatosGenerados
+                .AnyAsync(f => f.ColaboradorId == id);
+
+            if (tieneFormatos)
+            {
+                return BadRequest(new { message = "No se puede eliminar: el colaborador tiene formatos generados asociados" });
+            }
+
+            _context.Colaboradores.Remove(colaborador);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }

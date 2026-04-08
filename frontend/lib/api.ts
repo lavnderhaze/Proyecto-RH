@@ -41,3 +41,19 @@ export async function crearFormato(
     body: JSON.stringify(data),
   })
 }
+
+export async function eliminarColaborador(id: number): Promise<void> {
+  const res = await fetch(`${API_URL}/api/colaboradores/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => "Error desconocido")
+    throw new Error(
+      `Error ${res.status}: ${errorText || res.statusText}`
+    )
+  }
+}

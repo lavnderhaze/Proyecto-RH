@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { Search, RefreshCw, AlertCircle, Users } from "lucide-react"
+import { Search, RefreshCw, AlertCircle, Users, Trash2 } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -15,8 +15,19 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getColaboradores } from "@/lib/api"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { getColaboradores, eliminarColaborador } from "@/lib/api"
 import type { Colaborador } from "@/lib/types"
+import { toast } from "sonner"
 
 function TableLoading() {
   return (
@@ -60,6 +71,11 @@ export default function ColaboradoresPage() {
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [colaboradorToDelete, setColaboradorToDelete] =
+    useState<Colaborador | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
   async function fetchData() {
     setLoading(true)
     setError(null)
@@ -94,6 +110,34 @@ export default function ColaboradoresPage() {
         c.puesto.toLowerCase().includes(term)
     )
   }, [colaboradores, search])
+
+  function handleDeleteClick(colaborador: Colaborador) {
+    setColaboradorToDelete(colaborador)
+    setDeleteDialogOpen(true)
+  }
+
+  async function handleConfirmDelete() {
+    if (!colaboradorToDelete) return
+
+    setDeleting(true)
+    try {
+      await eliminarColaborador(colaboradorToDelete.id)
+      toast.success("Colaborador eliminado", {
+        description: `${colaboradorToDelete.nombre} ${colaboradorToDelete.apellidoPaterno} fue eliminado correctamente.`,
+      })
+      // Refresh list
+      await fetchData()
+    } catch (err) {
+      toast.error("Error al eliminar", {
+        description:
+          err instanceof Error ? err.message : "No se pudo eliminar el colaborador",
+      })
+    } finally {
+      setDeleting(false)
+      setDeleteDialogOpen(false)
+      setColaboradorToDelete(null)
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -163,9 +207,8 @@ export default function ColaboradoresPage() {
                     <TableHead>Fecha ingreso</TableHead>
                     <TableHead>Departamento</TableHead>
                     <TableHead>Puesto</TableHead>
-                    <TableHead className="text-center w-24">
-                      Estatus
-                    </TableHead>
+                    <TableHead className="text-center w-24">Estatus</TableHead>
+                    <TableHead className="text-center w-20">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -192,6 +235,17 @@ export default function ColaboradoresPage() {
                           {c.activo ? "Activo" : "Inactivo"}
                         </Badge>
                       </TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleDeleteClick(c)}
+                        >
+                          <Trash2 className="size-4" />
+                          <span className="sr-only">Eliminar colaborador</span>
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -200,6 +254,37 @@ export default function ColaboradoresPage() {
           )}
         </CardContent>
       </Card>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Eliminar colaborador</AlertDialogTitle>
+            <AlertDialogDescription>
+              {colaboradorToDelete && (
+                <>
+                  Estas a punto de eliminar a{" "}
+                  <span className="font-medium text-foreground">
+                    {colaboradorToDelete.nombre}{" "}
+                    {colaboradorToDelete.apellidoPaterno}{" "}
+                    {colaboradorToDelete.apellidoMaterno}
+                  </span>{" "}
+                  ({colaboradorToDelete.codigo}). Esta accion no se puede
+                  deshacer.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
